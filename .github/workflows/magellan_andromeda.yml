@@ -31,7 +31,7 @@ env:
   TINY_REPO: FabricMC/tiny-remapper
   TINY_BUILD_GRADLE: https://raw.githubusercontent.com/FabricMC/tiny-remapper/master/build.gradle
 
-  ANDROMEDA_REPO: AndromedaMC/Andromeda
+  ANDROMEDA_REPO: TeamEarendel/Andromeda
   ANDROMEDA_BRANCH: ver/1.19.3
 
 jobs:

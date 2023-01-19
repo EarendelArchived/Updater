@@ -13,7 +13,7 @@ env:
 
   MAIN: Magellan
   MAIN_REPO: TeamEarendel/Magellan
-  MAIN_BRANCH: paper-purpur/1.19.3
+  MAIN_BRANCH: paper/purpur/1.19.3
 
   GIT_EMAIL: alphakr93@gmail.com
   GIT_NAME: AlphaKR93
