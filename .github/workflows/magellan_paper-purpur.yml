@@ -1,4 +1,4 @@
-name: Scheduled Upstream (Magellan/Paper-Purpur/1.19.3)
+name: Scheduled Upstream (Magellan/Paper/Purpur/1.19.3)
 
 on:
   push:

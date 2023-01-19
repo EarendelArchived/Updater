@@ -1,0 +1,392 @@
+name: Scheduled Upstream (Magellan/Andromeda/1.19.3)
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/20 * * * *"
+
+env:
+  EDITED_PUFFERFISH: true
+
+  OS: ubuntu-latest
+
+  MAIN: Magellan
+  MAIN_REPO: TeamEarendel/Magellan
+  MAIN_BRANCH: andromeda/1.19.3
+
+  GIT_EMAIL: alphakr93@gmail.com
+  GIT_NAME: AlphaKR93
+
+  JDK: 19.0.1+10
+  JDK_DIST: temurin
+  JDK_REPO: adoptium/temurin19-binaries
+
+  WRAPPER_REPO: gradle/gradle
+  SHADOW_REPO: johnrengelman/shadow
+
+  PAPERWEIGHT_REPO: PaperMC/Paperweight
+  PAPERCLIP_REPO: PaperMC/Paperclip
+
+  TINY_REPO: FabricMC/tiny-remapper
+  TINY_BUILD_GRADLE: https://raw.githubusercontent.com/FabricMC/tiny-remapper/master/build.gradle
+
+  ANDROMEDA_REPO: AndromedaMC/Andromeda
+  ANDROMEDA_BRANCH: ver/1.19.3
+
+jobs:
+
+  setup:
+    name: Initialize Actions
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.setup.outputs.runner }}
+    steps:
+      - name: Initialize Variables
+        id: setup
+        run: |
+          echo "runner=${{ env.OS }}" >> $GITHUB_OUTPUT
+
+  check-dependencies:
+    name: Check Dependencies
+    steps:
+
+      - name: Initialize Variables
+        id: init
+        run: |
+          echo "runner=${{ env.OS }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout ${{ env.MAIN }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.MAIN_REPO }}
+          path: ${{ env.MAIN }}
+          ref: ${{ env.MAIN_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DIST }}
+          java-version: ${{ env.JDK }}
+          check-latest: true
+          cache: 'gradle'
+
+      - name: Check JDK Version
+        id: jdk
+        run: |
+          response=$(curl --silent https://api.github.com/repos/${{ env.JDK_REPO }}/releases/latest)
+          latest=$(echo $response | jq -r ".tag_name" | cut -c 5-)
+          current=$(cat ${{ env.MAIN }}/.github/workflows/build.yml | grep jdk: | cut -d "[" -f 2 | cut -d "]" -f 1)
+          echo "Current: $current, Latest: $latest"
+          printf "\nResponse:\n"
+          echo $response
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+      
+      - name: Check Gradle Wrapper Version
+        id: wrapper
+        run: |
+          latest=$(curl --silent https://services.gradle.org/versions/current | jq -r ".version")
+          current=$(cd ${{ env.MAIN }} && ./gradlew -v | grep Gradle | grep -v ! | cut -d " " -f 2)
+          echo "Current: $current, Latest: $latest"
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+      
+      - name: Check Gradle Shadow Version
+        id: shadow
+        run: |
+          response=$(curl --silent https://api.github.com/repos/${{ env.SHADOW_REPO }}/releases/latest)
+          latest=$(echo $response | jq -r ".tag_name")
+          current=$(cat ${{ env.MAIN }}/build.gradle.kts | grep com.github.johnrengelman.shadow | cut -d "\"" -f 4)
+          echo "Current: $current, Latest: $latest"
+          printf "\nResponse:\n"
+          echo $response
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+      
+      - name: Check Paperweight Version
+        id: paperweight
+        run: |
+          response=$(curl --silent https://api.github.com/repos/${{ env.PAPERWEIGHT_REPO }}/tags)
+          latest=$(echo $response | jq -r ".[0].name" | cut -c 2-)
+          current=$(cat ${{ env.MAIN }}/build.gradle.kts | grep io.papermc.paperweight.patcher | cut -d "\"" -f 4)
+          echo "Current: $current, Latest: $latest"
+          printf "\nResponse:\n"
+          echo $response
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+      
+      - name: Check Paperclip Version
+        id: paperclip
+        run: |
+          response=$(curl --silent https://api.github.com/repos/${{ env.PAPERCLIP_REPO }}/tags)
+          latest=$(echo $response | jq -r ".[0].name" | cut -c 2-)
+          current=$(cat ${{ env.MAIN }}/build.gradle.kts | grep io.papermc:paperclip | cut -d "\"" -f 2 | cut -d ":" -f 3)
+          echo "Current: $current, Latest: $latest"
+          printf "\nResponse:\n"
+          echo $response
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+      
+      - name: Check Tiny Remapper Version
+        id: tiny
+        run: |
+          latest=$(curl --silent ${{ env.TINY_BUILD_GRADLE }} | grep version | grep = | head -n 1 | cut -d "'" -f 2)
+          current=$(cat ${{ env.MAIN }}/build.gradle.kts | grep net.fabricmc:tiny-remapper | cut -d ":" -f 3)
+          echo "Current: $current, Latest: $latest"
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.runner }}
+    outputs:
+      runner: ${{ steps.init.outputs.runner }}
+
+      jdk: ${{ steps.jdk.outputs.latest }}
+      wrapper: ${{ steps.wrapper.outputs.latest }}
+      shadow: ${{ steps.shadow.outputs.latest }}
+      paperweight: ${{ steps.paperweight.outputs.latest }}
+      paperclip: ${{ steps.paperclip.outputs.latest }}
+      tiny: ${{ steps.tiny.outputs.latest }}
+
+      jdk_current: ${{ steps.jdk.outputs.current }}
+      wrapper_current: ${{ steps.wrapper.outputs.current }}
+      shadow_current: ${{ steps.shadow.outputs.current }}
+      paperweight_current: ${{ steps.paperweight.outputs.current }}
+      paperclip_current: ${{ steps.paperclip.outputs.current }}
+      tiny_current: ${{ steps.tiny.outputs.current }}
+
+  check-upstreams:
+    name: Check Upstreams
+    steps:
+
+      - name: Initialize Variables
+        id: init
+        run: |
+          echo "runner=${{ env.OS }}" >> $GITHUB_OUTPUT
+          echo "edited_pufferfish=${{ env.EDITED_PUFFERFISH }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout ${{ env.MAIN }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.MAIN_REPO }}
+          path: ${{ env.MAIN }}
+          ref: ${{ env.MAIN_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Check Andromeda Commit
+        id: andromeda
+        run: |
+          response=$(curl --silent https://api.github.com/repos/${{ env.ANDROMEDA_REPO }}/commits?sha=${{ env.ANDROMEDA_BRANCH }})
+          latest=$(echo $response | jq -r ".[0].sha")
+          current=$(cat ${{ env.MAIN }}/gradle.properties | grep andromedaCommit | sed 's/andromedaCommit = //')
+          echo "Current: $current, Latest: $latest"
+          printf "\nResponse:\n"
+          echo $response
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.runner }}
+    outputs:
+      runner: ${{ steps.init.outputs.runner }}
+      edited_pufferfish: ${{ steps.init.outputs.edited_pufferfish }}
+
+      paper: ${{ steps.paper.outputs.latest }}
+      pufferfish: ${{ steps.pufferfish.outputs.latest }}
+      andromeda: ${{ steps.andromeda.outputs.latest }}
+
+      paper_current: ${{ steps.paper.outputs.current }}
+      pufferfish_current: ${{ steps.pufferfish.outputs.current }}
+      andromeda_current: ${{ steps.andromeda.outputs.current }}
+  
+  update-dependencies:
+    name: Update Dependencies
+    steps:
+
+      - name: Checkout ${{ env.MAIN }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.MAIN_REPO }}
+          path: ${{ env.MAIN }}
+          ref: ${{ env.MAIN_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+      
+      - name: Setup Java
+        if: needs.check-dependencies.outputs.wrapper != ''
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DIST }}
+          java-version: ${{ env.JDK }}
+          check-latest: true
+          cache: 'gradle'
+
+      - name: Update JDK
+        if: needs.check-dependencies.outputs.jdk != ''
+        run: |
+          echo "TODO"
+
+      - name: Update Gradle Wrapper
+        if: needs.check-dependencies.outputs.wrapper != ''
+        run: |
+          cd ${{ env.MAIN }} && ./gradlew wrapper --gradle-version=${{ needs.check-dependencies.outputs.wrapper }}
+
+      - name: Update Gradle Shadow
+        if: needs.check-dependencies.outputs.shadow != '' && needs.check-dependencies.outputs.shadow != 'null'
+        run: |
+          sed -i 's/id("com.github.johnrengelman.shadow") version ".*"/id("com.github.johnrengelman.shadow") version "${{ needs.check-dependencies.outputs.shadow }}"/' ${{ env.MAIN }}/build.gradle.kts
+      
+      - name: Update Paperweight
+        if: needs.check-dependencies.outputs.paperweight != ''
+        run: |
+          sed -i 's/id("io.papermc.paperweight.patcher") version ".*"/id("io.papermc.paperweight.patcher") version "${{ needs.check-dependencies.outputs.paperweight }}"/' ${{ env.MAIN }}/build.gradle.kts
+
+      - name: Update Paperclip
+        if: needs.check-dependencies.outputs.paperclip != ''
+        run: |
+          sed -i 's/paperclip("io.papermc:paperclip:.*")/paperclip("io.papermc:paperclip:${{ needs.check-dependencies.outputs.paperclip }}")/' ${{ env.MAIN }}/build.gradle.kts
+      
+      - name: Update Tiny Remapper
+        if: needs.check-dependencies.outputs.tiny != ''
+        run: |
+          sed -i 's/remapper("net.fabricmc:tiny-remapper:.*:fat")/remapper("net.fabricmc:tiny-remapper:${{ needs.check-dependencies.outputs.tiny }}:fat")/' ${{ env.MAIN }}/build.gradle.kts
+      
+      - name: Commit Changes
+        run: |
+          cd ${{ env.MAIN }}
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+          if [ "${{ needs.check-dependencies.outputs.wrapper }}" != '' ]; then
+            echo "Building Gradle Wrapper Changes"
+            upstream="Wrapper"
+            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper }} | cut -d "." -f 3`" ]; then echo latest="${{ needs.check-dependencies.outputs.wrapper }}.0"; else echo latest="${{ needs.check-dependencies.outputs.wrapper }}"; fi
+            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper_current }} | cut -d "." -f 3`" ]; then echo current="${{ needs.check-dependencies.outputs.wrapper_current }}.0"; else echo current="${{ needs.check-dependencies.outputs.wrapper_current }}"; fi
+            response=$(curl --silent https://api.github.com/repos/${{ env.WRAPPER_REPO }}/compare/v$current...v$latest)
+            printf "\nGradle Wrapper Changes:\n"
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.WRAPPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            commit="$commit\n\nWrapper Changes:\n$desc"
+          fi
+
+          if [ "${{ needs.check-dependencies.outputs.shadow }}" != '' ]; then
+            if [ "${{ needs.check-dependencies.outputs.shadow }}" != 'null' ]; then
+              echo "Building Gradle Shadow Changes"
+              upstream="Shadow"
+              response=$(curl --silent https://api.github.com/repos/${{ env.SHADOW_REPO }}/compare/${{ needs.check-dependencies.outputs.shadow_current }}...${{ needs.check-dependencies.outputs.shadow }})
+              printf "\nGradle Shadow Changes:\n"
+              echo $response
+              desc=$(echo $response | jq -r '.commits[] | "${{ env.SHADOW_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+              commit="$commit\n\nShadow Changes:\n$desc"
+            fi
+          fi
+
+          if [ "${{ needs.check-dependencies.outputs.paperweight }}" != '' ]; then
+            echo "Building Paperweight Changes"
+            upstream="Paperweight"
+            response=$(curl --silent https://api.github.com/repos/${{ env.PAPERWEIGHT_REPO }}/compare/v${{ needs.check-dependencies.outputs.paperweight_current }}...v${{ needs.check-dependencies.outputs.paperweight }})
+            printf "\nPaperweight Changes:\n"
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPERWEIGHT_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            commit="$commit\n\nPaperweight Changes:\n$desc"
+          fi
+
+          if [ "${{ needs.check-dependencies.outputs.paperclip }}" != '' ]; then
+            echo "Building Paperclip Changes"
+            upstream="Paperclip"
+            response=$(curl --silent https://api.github.com/repos/${{ env.PAPERCLIP_REPO }}/compare/v${{ needs.check-dependencies.outputs.paperclip_current }}...v${{ needs.check-dependencies.outputs.paperclip }})
+            printf "\nPaperclip Changes:\n"
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPERCLIP_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            commit="$commit\n\nPaperclip Changes:\n$desc"
+          fi
+
+          git add .
+          printf "[CI-Skip] Updated Dependencies ($upstream)\n\nDependency has released updates that appear to apply and compile correctly$commit" | git commit -F -
+          git fetch
+          git pull origin ${{ env.MAIN_BRANCH }}
+          git push origin ${{ env.MAIN_BRANCH }}
+
+    needs: [check-dependencies]
+    runs-on: ${{ needs.check-dependencies.outputs.runner }}
+    if: needs.check-dependencies.outputs.wrapper != '' || (needs.check-dependencies.outputs.shadow != '' && needs.check-dependencies.outputs.shadow != 'null') || needs.check-dependencies.outputs.paperweight != '' || needs.check-dependencies.outputs.paperclip != '' || needs.check-dependencies.outputs.tiny != '' # || needs.check-dependencies.outputs.jdk != 
+  
+  upstream-andromeda:
+    name: Upstream Andromeda
+    steps:
+
+      - name: Checkout ${{ env.MAIN }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.MAIN_REPO }}
+          path: ${{ env.MAIN }}
+          ref: ${{ env.MAIN_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DIST }}
+          java-version: ${{ env.JDK }}
+          check-latest: true
+          cache: 'gradle'
+
+      - name: Configure Git
+        run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+      - name: Update Upstream
+        run: |
+          cd ${{ env.MAIN }}
+          sed -i 's/andromedaCommit = .*/andromedaCommit = '"${{ needs.check-upstreams.outputs.andromeda }}"'/' gradle.properties
+          cat gradle.properties | grep andromedaCommit
+          ./gradlew applyPatches --stacktrace
+      
+      - name: Rebuild ${{ env.MAIN }}
+        run: | 
+          cd ${{ env.MAIN }}
+          ./gradlew rebuildPatches
+
+      - name: Commit Changes
+        run: |
+          cd ${{ env.MAIN }}
+
+          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.ANDROMEDA_REPO }}/compare/${{ needs.check-upstreams.outputs.andromeda_current }}...${{ needs.check-upstreams.outputs.andromeda }} | jq -r '.commits[] | "${{ env.ANDROMEDA_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+
+          git add .
+          printf "Updated Upstream (Andromeda)\n\nUpstream has released updates that appear to apply and compile correctly\n\nAndromeda Changes:\n$desc" | git commit -F -
+          git fetch
+          git pull origin ${{ env.MAIN_BRANCH }}
+          git push origin ${{ env.MAIN_BRANCH }}
+
+    needs: [check-upstreams]
+    runs-on: ${{ needs.check-upstreams.outputs.runner }}
+    if: needs.check-upstreams.outputs.andromeda != ''
