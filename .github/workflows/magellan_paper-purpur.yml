@@ -418,7 +418,9 @@ jobs:
         run: |
           cd ${{ env.MAIN }}
 
-          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }} | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+          response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }})
+          echo $response
+          desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
 
           git add .
           printf "Updated Upstream (Paper)\n\nUpstream has released updates that appear to apply and compile correctly\n\nPaper Changes:\n$desc" | git commit -F -
@@ -521,12 +523,16 @@ jobs:
 
           if [ "${{ needs.check-upstreams.outputs.paper }}" != '' ]; then
             upstream="Paper"
-            desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }} | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }})
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
             commit="$commit\n\nPaper Changes:\n$desc"
           fi
           
           if [ "$upstream" != "" ]; then upstream="$upstream & Pufferfish"; else upstream="Pufferfish"; fi
-          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }} | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+          response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }})
+          echo $response
+          desc=$(echo $response | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
           commit="$commit\n\nPufferfish Changes:\n$desc"
 
           git add .
@@ -684,18 +690,24 @@ jobs:
 
           if [ "${{ needs.check-upstreams.outputs.paper }}" != '' ]; then
             upstream="Paper"
-            desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }} | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }})
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
             commit="$commit\n\nPaper Changes:\n$desc"
           fi
           
           if [ "${{ needs.check-upstreams.outputs.pufferfish }}" != '' ]; then
             if [ "$upstream" != "" ]; then upstream="$upstream & Pufferfish"; else upstream="Pufferfish"; fi
-            desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }} | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }})
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
             commit="$commit\n\nPufferfish Changes:\n$desc"
           fi
 
           if [ "$upstream" != "" ]; then upstream="$upstream & Purpur"; else upstream="Purpur"; fi
-          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ steps.init_purpur.outputs.purpur }} | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+          response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ steps.init_purpur.outputs.purpur }})
+          echo $response
+          desc=$(echo $response | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
           commit="$commit\n\nPurpur Changes:\n$desc"
 
           git add .
@@ -854,18 +866,24 @@ jobs:
 
           if [ "${{ needs.check-upstreams.outputs.paper }}" != '' ]; then
             upstream="Paper"
-            desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }} | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PAPER_REPO }}/compare/${{ needs.check-upstreams.outputs.paper_current }}...${{ needs.check-upstreams.outputs.paper }})
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PAPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
             commit="$commit\n\nPaper Changes:\n$desc"
           fi
           
           if [ "${{ needs.check-upstreams.outputs.pufferfish }}" != '' ]; then
             if [ "$upstream" != "" ]; then upstream="$upstream & Pufferfish"; else upstream="Pufferfish"; fi
-            desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }} | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+            response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PUFFERFISH_REPO }}/compare/${{ needs.check-upstreams.outputs.pufferfish_current }}...${{ steps.init.outputs.pufferfish }})
+            echo $response
+            desc=$(echo $response | jq -r '.commits[] | "${{ env.PUFFERFISH_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
             commit="$commit\n\nPufferfish Changes:\n$desc"
           fi
 
           if [ "$upstream" != "" ]; then upstream="$upstream & Purpur"; else upstream="Purpur"; fi
-          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ steps.init_purpur.outputs.purpur }} | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+          response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ steps.init_purpur.outputs.purpur }})
+          echo $response
+          desc=$(echo $response | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
           commit="$commit\n\nPurpur Changes:\n$desc"
 
           git add .

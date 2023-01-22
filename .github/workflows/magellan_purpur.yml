@@ -379,7 +379,9 @@ jobs:
         run: |
           cd ${{ env.MAIN }}
 
-          desc=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ needs.check-upstreams.outputs.purpur }} | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
+          response=$(curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ env.PURPUR_REPO }}/compare/${{ needs.check-upstreams.outputs.purpur_current }}...${{ needs.check-upstreams.outputs.purpur }})
+          echo $response
+          desc=$(echo $response | jq -r '.commits[] | "${{ env.PURPUR_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
 
           git add .
           printf "Updated Upstream (Purpur)\n\nUpstream has released updates that appear to apply and compile correctly\n\nPurpur Changes:\n$desc" | git commit -F -
