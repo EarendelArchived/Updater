@@ -328,9 +328,9 @@ jobs:
           if [ "${{ needs.check-dependencies.outputs.wrapper }}" != '' ]; then
             echo "Building Gradle Wrapper Changes"
             upstream="Wrapper"
-            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper }} | cut -d "." -f 3`" ]; then echo latest="${{ needs.check-dependencies.outputs.wrapper }}.0"; else echo latest="${{ needs.check-dependencies.outputs.wrapper }}"; fi
-            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper_current }} | cut -d "." -f 3`" ]; then echo current="${{ needs.check-dependencies.outputs.wrapper_current }}.0"; else echo current="${{ needs.check-dependencies.outputs.wrapper_current }}"; fi
-            response=$(curl --silent https://api.github.com/repos/${{ env.WRAPPER_REPO }}/compare/v$current...v$latest)
+            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper }} | cut -d "." -f 3`" ]; then latest="v${{ needs.check-dependencies.outputs.wrapper }}.0"; else latest="v${{ needs.check-dependencies.outputs.wrapper }}"; fi
+            if [ "$`echo . | cut -d "." -f 2`" == "$`echo ${{ needs.check-dependencies.outputs.wrapper_current }} | cut -d "." -f 3`" ]; then current="v${{ needs.check-dependencies.outputs.wrapper_current }}.0"; else current="v${{ needs.check-dependencies.outputs.wrapper_current }}"; fi
+            response=$(curl --silent https://api.github.com/repos/${{ env.WRAPPER_REPO }}/compare/$current...$latest)
             printf "\nGradle Wrapper Changes:\n"
             echo $response
             desc=$(echo $response | jq -r '.commits[] | "${{ env.WRAPPER_REPO }}@\(.sha[:7]) \(.commit.message | split("\r\n")[0] | split("\n")[0])"')
