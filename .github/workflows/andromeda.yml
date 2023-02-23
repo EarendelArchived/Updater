@@ -99,7 +99,7 @@ jobs:
         id: wrapper
         run: |
           latest=$(curl --silent https://services.gradle.org/versions/current | jq -r ".version")
-          current=$(cd ${{ env.MAIN }} && ./gradlew -v | grep Gradle | grep -v ! | cut -d " " -f 2)
+          current=$(cd ${{ env.MAIN }} && ./gradlew -v | grep "^Gradle" | cut -d " " -f 2)
           echo "Current: $current, Latest: $latest"
 
           if [ "$latest" != "$current" ]; then
